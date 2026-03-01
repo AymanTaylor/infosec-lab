@@ -1,3 +1,3 @@
 # infosec-lab
 
-Mini projects of mine 
+Mini projects, codes of mine 
