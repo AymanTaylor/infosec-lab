@@ -23,9 +23,8 @@ Success criteria:
 
 ---
 
-## 2. Operational Context
+## 2. Context
 
-* Domain: Cybersecurity / Blue Team
 * Target environment: Windows 10, Windows 11, Windows Server
 * Assumptions:
 
@@ -238,3 +237,4 @@ Coverage target:
 ## Maintainer
 
 Ayman Taylor
+
