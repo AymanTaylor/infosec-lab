@@ -1,149 +1,145 @@
-# Project Codename: Sentinel Baseline
+# Windows Baseline Audit
 
-> Enforce and verify Windows host security baseline integrity through deterministic configuration auditing.
+[![PowerShell](https://img.shields.io/badge/Built%20With-PowerShell-5391FE?style=for-the-badge\&logo=powershell\&logoColor=white)](https://learn.microsoft.com/powershell/)
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge\&logo=windows\&logoColor=white)](https://www.microsoft.com/windows)
+[![License](https://img.shields.io/badge/License-Unlicense-lightgrey?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/Status-Production--Ready-success?style=for-the-badge)](#)
+
+> Check a Windows machine for basic security weaknesses and generate a clear audit report.
 
 ---
 
-## 00. Mission Brief
+## 1. Mission Brief
 
-The problem: Windows endpoints drift from secure baseline configurations over time due to updates, user privilege changes, service modifications, and persistence mechanisms.
+Windows systems often drift away from secure settings over time.
 
-Intended outcome: Produce a structured audit report that identifies misconfigurations, privilege escalation exposure, insecure services, logging weaknesses, and network exposure.
+Goal: Scan the local machine and produce a readable report that shows security risks.
 
 Success criteria:
 
-* Deterministic audit execution without runtime errors
-* Clear identification of high-risk deviations
-* Timestamped, reproducible reports
+* Script runs without errors
+* Report is generated with timestamp
+* High-risk findings are clearly visible
 
 ---
 
-## 01. Operational Context
+## 2. Operational Context
 
-* Domain: Blue Team / Endpoint Security / Baseline Enforcement
-* Target environment: Windows 10/11, Windows Server (PowerShell 5.1+)
+* Domain: Cybersecurity / Blue Team
+* Target environment: Windows 10, Windows 11, Windows Server
 * Assumptions:
 
-  * Script executed with administrative privileges
-  * Host is domain-joined or standalone enterprise endpoint
+  * Run as Administrator
+  * PowerShell 5.1 or higher
 * Constraints:
 
-  * No external agents installed
-  * No persistent service deployment
-  * Local execution only
+  * Local machine only
+  * No external server
+  * No database
 
 ---
 
-## 02. System Topology
+## 3. System Topology
 
 Layers:
 
-* Interface Layer: PowerShell CLI execution (`audit.ps1`)
-* Application Core: Modular audit functions under `/modules`
-* Persistence Layer: Flat-file report generation in `/reports`
-* External Integrations: Native Windows APIs (CIM, WinRM, NetSecurity, EventLog)
+* Interface Layer: PowerShell script (`audit.ps1`)
+* Application Core: Audit modules inside `/modules`
+* Persistence Layer: Text report saved in `/reports`
+* External Integrations: Built-in Windows commands (services, firewall, users, logs)
 
 Data Flow Summary:
-Input → Configuration parameters → Module invocation → Validation & filtering → Report serialization → File output
+User runs script → Modules collect data → Data is filtered → Results written to report → Report saved to disk
 
 ---
 
-## 03. Design Rationale
+## 4. Design Rationale
 
 * Why this stack?
 
-  * Native PowerShell ensures zero external dependencies and maximum compatibility with enterprise Windows environments.
+  * PowerShell is built into Windows and requires no installation.
 
-* Why this data model?
+* Why this storage model?
 
-  * Flat structured text output prioritizes portability and forensic preservation over database complexity.
+  * Simple text files are easy to read and archive.
 
 * Trade-offs accepted:
 
-  * No centralized aggregation
-  * No real-time monitoring
-  * Limited historical diff capability
+  * No graphical interface
+  * No central dashboard
+  * No real-time alerts
 
 * Alternatives rejected:
 
-  * Agent-based EDR-style collectors (overhead not required)
-  * GUI-based auditing tools (non-automatable)
+  * Third-party security tools (overkill for baseline audit)
+  * Complex databases (not needed for single-host audit)
 
 ---
 
-## 04. Core Mechanisms
+## 5. Core Mechanisms
 
-Mechanism A – Privilege & Account Surface Audit
+Mechanism A – User & Admin Check
 
-* Trigger: Execution of `Get-UsersAudit`
-* Logic: Enumerate local users, admin group membership, password policies
-* Output: Structured table highlighting enabled accounts and privileged identities
+* Trigger: Script execution
+* Logic: List local users and admin group members
+* Output: Table showing enabled accounts and privileged users
 
-Mechanism B – Persistence & Exposure Detection
+Mechanism B – Service & Port Check
 
-* Trigger: Execution of autorun, services, and network modules
-* Logic: Identify startup commands, high-risk services, listening suspicious ports
-* Output: Flagged entries within report for manual review
+* Trigger: Script execution
+* Logic: Detect risky services and listening ports
+* Output: Flagged services and exposed ports in report
 
-Mechanism C – Security Posture Validation
+Mechanism C – Security Posture Check
 
-* Trigger: Firewall, patch, and logging module execution
-* Logic: Validate firewall enablement, recent hotfix presence, Security log configuration
-* Output: Compliance snapshot of defensive posture
+* Trigger: Script execution
+* Logic: Verify firewall status, installed updates, and event logging
+* Output: Summary of system security state
 
 ---
 
-## 05. Data Contracts
+## 6. Data Contracts
 
 Primary Entities:
-
-Audit_Report
-
-* timestamp (datetime | required)
-* host_identifier (string | required)
-* section_blocks (array | non-null)
 
 User_Record
 
 * name (string | required)
-* enabled (bool | required)
-* privilege_level (enum | standard/admin)
+* enabled (boolean | required)
+* role (standard/admin)
 
 Service_Record
 
 * name (string | required)
-* status (enum | running/stopped)
-* start_type (enum | auto/manual/disabled)
+* status (running/stopped)
+* start_type (auto/manual/disabled)
 
 Integrity Rules:
 
-* No destructive operations performed
-* Read-only enumeration only
-* Invalid or inaccessible objects logged, not ignored
-* Edge-case handling:
-
-  * Missing modules fail gracefully
-  * Access-denied conditions appended to report
+* No system changes are made
+* Read-only checks only
+* Errors are written into report
+* If access is denied, it is logged clearly
 
 ---
 
-## 06. Execution Model
+## 7. Execution Model
 
 Runtime mode:
 
 * Stateless
 * Synchronous
-* Request-response (single execution lifecycle)
+* Single execution per run
 
 Resource profile:
 
-* CPU considerations: Minimal, primarily enumeration calls
-* Memory considerations: Low footprint, no large in-memory datasets
-* I/O characteristics: Moderate disk write for report generation
+* CPU considerations: Low usage
+* Memory considerations: Minimal
+* I/O characteristics: Writes one report file per run
 
 ---
 
-## 07. Deployment Blueprint
+## 8. Execution
 
 Local Execution:
 
@@ -154,73 +150,64 @@ powershell -ExecutionPolicy Bypass -File audit.ps1
 Containerized:
 
 ```bash
-# Not applicable (native Windows execution required)
+# Not supported (runs directly on Windows)
 ```
-
-Production Assumptions:
-
-* Reverse proxy: Not required
-* TLS termination: Not applicable
-* Environment isolation: Execution on secured administrative workstation
 
 ---
 
-## 08. Observability
+## 9. Observability
 
 * Logging strategy:
 
-  * Structured text sections per audit domain
+  * Structured sections in report
 * Error classification:
 
-  * Access errors
-  * Enumeration failures
-  * Missing components
+  * Access denied
+  * Missing component
+  * Enumeration failure
 * Monitoring hooks:
 
-  * Can be scheduled via Task Scheduler
+  * Can be scheduled with Windows Task Scheduler
 * Audit capability:
 
-  * Timestamped reports allow longitudinal comparison
+  * Each run creates a timestamped report
 
 ---
 
-## 09. Failure Surfaces
+## 10. Failure Surfaces
 
 * Input abuse:
 
-  * Execution without admin rights
+  * Running without admin rights
 * Race conditions:
 
-  * Service state changes during enumeration
+  * Service state changes during scan
 * Data corruption vectors:
 
   * Interrupted file write
 * Dependency failure:
 
-  * Missing PowerShell modules
+  * Disabled PowerShell features
 
 Mitigations:
 
 * Validation layers:
 
-  * Privilege check before execution
+  * Check admin privileges before scan
 * Transaction controls:
 
-  * Atomic report file creation
-* Defensive error handling:
-
-  * Try/Catch wrapping around modules
+  * Create report file before writing data
 
 ---
 
-## 10. Validation Strategy
+## 11. Validation Strategy
 
 Testing tiers:
 
-* Unit (module-level function validation)
-* Integration (full audit execution)
-* Adversarial / edge-case (disabled services, corrupted accounts)
-* Performance (execution time under load)
+* Unit (test each module separately)
+* Integration (full script execution)
+* Edge-case (disabled services, empty admin group)
+* Performance (measure execution time)
 
 Example:
 
@@ -229,40 +216,25 @@ Invoke-Pester
 ```
 
 Coverage target:
-≥ 85% functional path coverage
+≥ 85%
 
 ---
 
-## 11. Operational Limits
+## 12. Operational Limits
 
 * Not optimized for:
 
-  * Real-time monitoring
+  * Enterprise-wide scanning
 * Not designed for:
 
-  * Enterprise-wide aggregation
+  * Real-time monitoring
 * Hard scalability ceiling:
 
-  * Single-host execution per run
+  * One machine per execution
+
 
 ---
 
-## 12. Evolution Path
+## Maintainer
 
-Phase I: Baseline validation and structured reporting
-Phase II: JSON export and centralized ingestion compatibility
-Phase III: Policy-as-code compliance engine with rule scoring
-
----
-
-## 13. Status Classification
-
-* Production-ready (local auditing scope)
-
----
-
-## 14. Maintainer
-
-Ayman Asaad Taylor
-Security Engineering Student
-(Private)
+Ayman Taylor
