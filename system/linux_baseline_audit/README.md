@@ -9,7 +9,7 @@
 
 ---
 
-## 1. Mission Brief
+## 1. Brief
 
 Linux systems often drift from secure configurations over time.
 
@@ -197,3 +197,4 @@ Coverage target: ≥ 85%
 ## Maintainer
 
 Ayman Taylor
+
